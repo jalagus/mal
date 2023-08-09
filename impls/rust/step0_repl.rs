@@ -1,31 +1,40 @@
-extern crate rustyline;
+use std::io::{stdin, stdout, Write};
 
-use rustyline::error::ReadlineError;
-use rustyline::Editor;
+fn read(x: String) -> String {
+    x
+}
+
+fn eval(x: String) -> String {
+    x
+}
+
+fn print(x: String) -> String {
+    x
+}
+
+fn rep(x: &String) -> String {
+    print(eval(read(x.to_string())))
+}
 
 fn main() {
-    // `()` can be used when no completer is required
-    let mut rl = Editor::<()>::new();
-    if rl.load_history(".mal-history").is_err() {
-        eprintln!("No previous history.");
-    }
+    let mut user_input = String::new();
 
-    loop {
-        let readline = rl.readline("user> ");
-        match readline {
-            Ok(line) => {
-                rl.add_history_entry(&line);
-                rl.save_history(".mal-history").unwrap();
-                if line.len() > 0 {
-                    println!("{}", line);
-                }
-            }
-            Err(ReadlineError::Interrupted) => continue,
-            Err(ReadlineError::Eof) => break,
-            Err(err) => {
-                println!("Error: {:?}", err);
-                break;
-            }
+    while user_input != "\n" {
+        print!("user> ");
+        let _ = stdout().flush();
+        stdin().read_line(&mut user_input).expect("Error reading user input.");
+        if user_input == "\n" {
+            break;
         }
+        
+        if let Some('\n') = user_input.chars().next_back() {
+            user_input.pop();
+        }
+        if let Some('\r') = user_input.chars().next_back() {
+            user_input.pop();
+        }
+
+        println!("{}", rep(&user_input));
+        user_input.clear();
     }
 }
