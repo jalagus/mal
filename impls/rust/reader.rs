@@ -22,6 +22,7 @@ impl Readable for Reader {
     }
 }
 
+#[derive(Debug)]
 pub enum MalType {
     Number(i32),
     Symbol(String),
@@ -51,14 +52,17 @@ fn read_form(x: &mut Reader) -> MalType {
 
 fn read_list(x: &mut Reader) -> MalType {
     let mut symbols: Vec<MalType> = vec![];
-    while x.next() != ")" {
+    x.next();
+    while x.peek() != ")" {
         symbols.push(read_form(x));
+        x.next();
     };
     MalType::List(symbols)
 }
 
 fn read_atom(x: &mut Reader) -> MalType {
     let token = x.peek();
+
     match token.parse::<i32>() {
         Ok(x) => MalType::Number(x),
         _ => MalType::Symbol(token)
