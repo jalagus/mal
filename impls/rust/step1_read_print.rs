@@ -5,7 +5,7 @@ use reader::MalType;
 mod reader;
 mod printer;
 
-fn read(x: String) -> MalType {
+fn read(x: String) -> Result<MalType, String> {
     reader::read_str(x)
 }
 
@@ -18,7 +18,10 @@ fn print(x: MalType) -> String {
 }
 
 fn rep(x: &String) -> String {
-    print(eval(read(x.to_string())))
+    match read(x.to_string()) {
+        Ok(x) => print(eval(x)),
+        Err(err_msg) => err_msg
+    }
 }
 
 fn main() {
