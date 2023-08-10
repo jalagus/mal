@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use regex::Regex;
 
 
@@ -33,6 +35,9 @@ pub enum MalType {
     Nil,
     True,
     False,
+    Keyword(String),
+    HMap(HashMap<String, MalType>),
+    Vector(Vec<MalType>)
 }
 
 pub fn read_str(x: String) -> Result<MalType, String> {
@@ -58,12 +63,33 @@ fn read_form(x: &mut Reader) -> Result<MalType, String> {
 
 fn read_list(x: &mut Reader) -> Result<MalType, String> {
     let mut symbols: Vec<MalType> = vec![];
-    x.next();
+    let _ = x.next();
     while x.peek()? != ")" {
         symbols.push(read_form(x).unwrap());
-        x.next();
+        let _ = x.next();
     };
     Ok(MalType::List(symbols))
+}
+
+fn read_vector(x: &mut Reader) -> Result<MalType, String> {
+    let mut symbols: Vec<MalType> = vec![];
+    let _ = x.next();
+    while x.peek()? != "]" {
+        symbols.push(read_form(x).unwrap());
+        let _ = x.next();
+    };
+    Ok(MalType::Vector(symbols))
+}
+
+fn read_hashmap(x: &mut Reader) -> Result<MalType, String> {
+    let mut symbols: HashMap<String, MalType> = HashMap::new();
+    let _ = x.next();
+    while x.peek()? != "}" {
+        let key = x.next()?;
+        symbols.insert(key, read_form(x)?);
+        let _ = x.next();
+    };
+    Ok(MalType::HMap(symbols))
 }
 
 fn read_atom(x: &mut Reader) -> MalType {
@@ -76,7 +102,14 @@ fn read_atom(x: &mut Reader) -> MalType {
                 "nil" => MalType::Nil,
                 "true" => MalType::True,
                 "false" => MalType::False,
-                _ => MalType::Symbol(token)
+                _ => {
+                    match token.chars().nth(0).unwrap() {
+                        ':' => MalType::Keyword(token),
+                        '{' => read_hashmap(x).unwrap(),
+                        '[' => read_vector(x).unwrap(),
+                        _ => MalType::Symbol(token)
+                    }
+                }
             }
         }
     }
