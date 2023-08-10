@@ -7,8 +7,9 @@ pub fn pr_str(x: &MalType) -> String {
         MalType::Nil => "nil".to_string(),
         MalType::True => "true".to_string(),
         MalType::False => "false".to_string(),
+        MalType::String(y) => y.to_string(),
         MalType::Keyword(y) => y.to_string(),
-        MalType::HMap(y) => {
+        MalType::HashMap(y) => {
             let res = y.iter()
                 .map(|(a, b)| format!("{} {}", a, pr_str(b)))
                 .reduce(|a, b| a + " " + b.as_str()).unwrap();         

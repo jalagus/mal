@@ -35,8 +35,9 @@ pub enum MalType {
     Nil,
     True,
     False,
+    String(String),
     Keyword(String),
-    HMap(HashMap<String, MalType>),
+    HashMap(HashMap<String, MalType>),
     Vector(Vec<MalType>)
 }
 
@@ -58,25 +59,25 @@ fn read_form(x: &mut Reader) -> Result<MalType, String> {
     if x.peek()? == "(" {
         return read_list(x);
     }
-    Ok(read_atom(x))
+    read_atom(x)
 }
 
 fn read_list(x: &mut Reader) -> Result<MalType, String> {
     let mut symbols: Vec<MalType> = vec![];
-    let _ = x.next();
+    let _ = x.next()?;
     while x.peek()? != ")" {
         symbols.push(read_form(x).unwrap());
-        let _ = x.next();
+        let _ = x.next()?;
     };
     Ok(MalType::List(symbols))
 }
 
 fn read_vector(x: &mut Reader) -> Result<MalType, String> {
     let mut symbols: Vec<MalType> = vec![];
-    let _ = x.next();
+    let _ = x.next()?;
     while x.peek()? != "]" {
         symbols.push(read_form(x).unwrap());
-        let _ = x.next();
+        let _ = x.next()?;
     };
     Ok(MalType::Vector(symbols))
 }
@@ -87,27 +88,28 @@ fn read_hashmap(x: &mut Reader) -> Result<MalType, String> {
     while x.peek()? != "}" {
         let key = x.next()?;
         symbols.insert(key, read_form(x)?);
-        let _ = x.next();
+        let _ = x.next()?;
     };
-    Ok(MalType::HMap(symbols))
+    Ok(MalType::HashMap(symbols))
 }
 
-fn read_atom(x: &mut Reader) -> MalType {
+fn read_atom(x: &mut Reader) -> Result<MalType, String> {
     let token = x.peek().unwrap();
 
     match token.parse::<i32>() {
-        Ok(x) => MalType::Number(x),
+        Ok(x) => Ok(MalType::Number(x)),
         _ => {
             match token.as_str() {
-                "nil" => MalType::Nil,
-                "true" => MalType::True,
-                "false" => MalType::False,
+                "nil" => Ok(MalType::Nil),
+                "true" => Ok(MalType::True),
+                "false" => Ok(MalType::False),
                 _ => {
                     match token.chars().nth(0).unwrap() {
-                        ':' => MalType::Keyword(token),
-                        '{' => read_hashmap(x).unwrap(),
-                        '[' => read_vector(x).unwrap(),
-                        _ => MalType::Symbol(token)
+                        '{' => read_hashmap(x),
+                        '[' => read_vector(x),
+                        '"' => Ok(MalType::String(token)),
+                        ':' => Ok(MalType::Keyword(token)),
+                        _ => Ok(MalType::Symbol(token))
                     }
                 }
             }
